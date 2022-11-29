@@ -42,21 +42,28 @@ except Exception as e:
 
 os.chdir("build_pipeline")
 
-try:
-    #shutil.rmtree("curated_alignments/")
-    shutil.rmtree("muscle_alignments/")
-    shutil.rmtree("HMMs/")
-    shutil.rmtree("IMGT_sequence_files/")
-    os.mkdir(os.path.join(ANARCI_LOC, "dat"))
-except OSError:
-    pass
+# The main change in this fork is that I have run the build pipeline once,
+# and will use those results for all future builds. Since I'm building
+# often in docker, ANARCI may fail to build if IMGT servers are down,
+# or their API is down, which has happened to me before without
+# realizing.
 
-print('Downloading germlines from IMGT and building HMMs...')
-proc = subprocess.Popen(["bash", "RUN_pipeline.sh"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-o, e = proc.communicate()
+# try:
+#     #shutil.rmtree("curated_alignments/")
+#     shutil.rmtree("muscle_alignments/")
+#     shutil.rmtree("HMMs/")
+#     shutil.rmtree("IMGT_sequence_files/")
+#     os.mkdir(os.path.join(ANARCI_LOC, "dat"))
+# except OSError:
+#     pass
 
-print(o.decode())
-print(e.decode())
+# print('Downloading germlines from IMGT and building HMMs...')
+# proc = subprocess.Popen(["bash", "RUN_pipeline.sh"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+# o, e = proc.communicate()
+
+# print(o.decode())
+# print(e.decode())
+
 
 shutil.copy( "curated_alignments/germlines.py", ANARCI_LOC )
 shutil.copytree( "HMMs", os.path.join(ANARCI_LOC, "dat/HMMs/") )
