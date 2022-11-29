@@ -47,6 +47,7 @@ os.chdir("build_pipeline")
 # often in docker, ANARCI may fail to build if IMGT servers are down,
 # or their API is down, which has happened to me before without
 # realizing.
+# Built on 2022-11-29, IMGT release 202246-1 (14 November 2022) 
 
 # try:
 #     #shutil.rmtree("curated_alignments/")
