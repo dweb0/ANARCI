@@ -41,10 +41,7 @@ all_species = ["Homo_sapiens",
            "Mus",
            "Rattus_norvegicus",
            "Oryctolagus_cuniculus",
-           "Macaca_mulatta",
-           "Sus_scrofa",
-           "Vicugna_pacos",
-           "Bos_taurus"]
+           "Sus_scrofa"]
 
 all_tr_species = ["Homo_sapiens",
            "Mus",
@@ -91,32 +88,29 @@ def read_alignment(input_file, read_all=False, region_name=""):
         fields = dict(list(zip( imgt_fields, record.description.split("|"))) )
         sequence = record.seq 
         # These are the ones we care about and will be used
-        try:
-            if fields['accession_number'] == 'None':continue
-            if fields["functionality"]=="F" and not fields["partial"].strip() and not fields["reverse"].strip():
-                if read_all:
-                    pass
-                elif fields["allele"].split("*")[-1].strip()!="01": 
-                    continue
-                if set(list(sequence))- acid_set:
-    #                print >> sys.stderr,"Unexpected character in sequence"
-    #                print >> sys.stderr,sequence
-                    continue
-
-                if fields["region"] == region_name:
-                    records[ (fields["species"], fields[ "allele" ] ) ] = sequence
-                elif region_name.startswith("C"):
-                    if len(sequence) < 100: 
-                        continue # Filter out partial sequences that IMGT have not....
-                elif region:
-                    assert fields["region"]==region, "The region for some the entries is different"
-
-                region=fields["region"]
-                records[ (fields["species"], fields[ "allele" ] ) ] = sequence
-        except KeyError:
-            print("Something wrong with the file %s"%input_file)
+ 
+        if fields['accession_number'] == 'None':
+            print('no accession', file=sys.stderr)
             continue
-            
+
+        if fields['functionality'] != 'F':
+            continue
+
+        if fields['partial'].strip() != '':
+            #print(f'partial allele {fields["allele"]}. Skipping', file=sys.stderr)
+            continue
+
+        if fields["region"] == region_name:
+            records[ (fields["species"], fields[ "allele" ] ) ] = sequence
+        elif region_name.startswith("C"):
+            if len(sequence) < 100: 
+                continue # Filter out partial sequences that IMGT have not....
+        elif region:
+            assert fields["region"]==region, "The region for some the entries is different"
+
+        region=fields["region"]
+        records[ (fields["species"], fields[ "allele" ] ) ] = sequence
+   
     handle.close()
     return records
 
@@ -222,12 +216,24 @@ def format_v_genes(valignments):
                 sequence = mouse_alpha(sequence)
             elif chain_type == "D" and translations[species] == "mouse":
                 sequence = mouse_delta(sequence)
+            elif chain_type == 'H' and translations[species] == "rat":
+                sequence = rat_heavy(sequence, seq[1])
+
             new_valignments[entry][ seq ] = sequence[:108].ljust( 108 ).replace(" ",".")
             if new_valignments[entry][ seq ][103] != "C" or new_valignments[entry][ seq ][22] != "C": 
                 sys.stderr.write("Warning - this alignment doesn't feature CYS at position 23 and/or position 104.\n")
                 sys.stderr.write("%s,%s,%s\n" % (new_valignments[entry][ seq ], entry, seq))
 
     return new_valignments
+
+
+def rat_heavy(sequence: str, name: str):
+    """ Custom fix, similar to mouse_delta, rhesus_lambda, etc."""
+
+    if sequence[33] != '.' or sequence[103] != '.':
+        print(f'warning: artificially chopping up {name}')
+    return sequence[:33] + sequence[34:103] + sequence[104:]
+
 
 def mouse_delta(sequence):
     """
